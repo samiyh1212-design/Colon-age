@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colon Age</title>
+<style>
+:root{--bg:#eff6ff;--card:#fff;--ink:#102647;--mut:#465d7a;--line:#c9daf0;--teal:#154da3;--org:#245eb3;--warn:#edf5ff;--ok:#eff6ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font:700 44px/1 Georgia,"Times New Roman",serif;margin:6px 0 4px}
+button{font:inherit;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);padding:16px;margin-bottom:16px}
+.card h2{font:700 20px Georgia,serif;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+.row{display:flex;gap:6px}
+input[type=number],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:9px;width:100%;min-width:0;border-radius:4px}
+select{width:auto;flex:0 0 auto;max-width:92px;padding:9px 4px}
+input.bad{border-color:var(--org)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;color:var(--ink)}
+.chk input{margin-top:4px}
+.ages{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.big{font:700 64px/1 Georgia,serif}
+.lbl{font-size:13px;color:var(--mut)}
+.gap{margin-top:12px;text-align:center;font-size:15px}
+.msg{padding:10px 12px;margin-top:12px;font-size:14px;border-left:4px solid var(--teal);background:var(--ok)}
+.msg.w{border-color:var(--org);background:var(--warn)}
+.msg ul{margin:4px 0 0;padding-left:18px}
+.tog{float:right;font-size:13px;background:none;border:0;color:var(--teal);text-decoration:underline;padding:0}
+header{display:flex;align-items:center;gap:16px;margin:10px 0 24px}
+header h1{margin:0}
+.card{border-radius:14px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #245eb3;outline-offset:2px}
+input[type=checkbox]{accent-color:#154da3}
+#calculate{margin:0 0 16px;padding:11px 18px;border:0;border-radius:8px;background:#154da3;color:white;font-weight:650}
+@media(max-width:430px){.grid{grid-template-columns:1fr}.tog{float:none;display:block;margin-top:5px}}
+.ribbon{display:block;width:57px;height:68px;object-fit:contain;flex:none}
+.msg.attention{background:#fff0ee;color:#7c2525;border-color:#ba3939}.msg.below{background:#ecf8ee;color:#235637;border-color:#388353}
+</style></head><body><main>
+<header><img class="ribbon" alt="" width="57" height="68" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA5NiIgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxOTIiPgo8cGF0aCBmaWxsPSIjMTg0NDgxIiBkPSJNMjQgMzBDMTcgMTQgMjUgNSA0MCA1UzYzIDE0IDU2IDMwTDQ4IDM3QzUxIDIzIDQ4IDE3IDQwIDE3UzI5IDIzIDMyIDM3WiIvPgo8cGF0aCBmaWxsPSIjMjE1NmEwIiBkPSJNNTIgMTJDNjQgMTcgNjcgMjkgNjAgNDJMMjcgODlsLTQtMTItMTMgMiAzNS00OGM3LTkgMTAtMTQgNy0xOVoiLz4KPHBhdGggZmlsbD0iIzM1NzhkNCIgZD0iTTI4IDEyQzE2IDE3IDEzIDI5IDIwIDQybDMzIDQ3IDQtMTIgMTMgMi0zNS00OGMtNy05LTEwLTE0LTctMTlaIi8+Cjwvc3ZnPgo="><h1>Colon Age</h1></header>
+
+<div class="card"><h2>1. Eligibility for the proposed study</h2>
+<div class="grid"><div><label for="age">Chronological age (years)</label><input id="age" type="number" inputmode="decimal" step="0.1" min="18" max="100"></div></div>
+<label class="chk"><input type="checkbox" id="asym"> No colorectal symptoms</label>
+<label class="chk"><input type="checkbox" id="avg"> Average risk (no personal or family history, no other high-risk condition)</label>
+<label class="chk"><input type="checkbox" id="acute"> Blood drawn during an acute illness or infection</label></div>
+
+<div class="card"><h2>2. Blood results <button class="tog" id="tog">Switch to conventional units</button></h2>
+<div class="grid" id="labs"></div></div>
+
+<button type="button" id="calculate">Calculate PhenoAge</button>
+<div class="card" id="out" hidden><h2>3. Result</h2><div id="res" aria-live="polite"></div></div>
+
+</main>
+<script>
+/* ---- calculation core (inputs in formula units: albumin g/L, creatinine µmol/L, glucose mmol/L, CRP mg/dL) ---- */
+function phenoAge(v){
+  var xb=-19.9067-0.0336*v.alb+0.0095*v.cr+0.1953*v.glu+0.0954*Math.log(v.crp)
+    -0.0120*v.lym+0.0268*v.mcv+0.3306*v.rdw+0.00188*v.alp+0.0554*v.wbc+0.0804*v.age;
+  var M=1-Math.exp(-1.51714*Math.exp(xb)/0.0076927);
+  return 141.50225+Math.log(-0.00553*Math.log(1-M))/0.090165;
+}
+/* ---- fields: [id,label,[[unit,factor to formula unit],...],range in formula unit] ---- */
+var F=[
+["alb","Albumin",[["g/L",1],["g/dL",10]],[20,55]],
+["cr","Creatinine",[["µmol/L",1],["mg/dL",88.4]],[20,500]],
+["glu","Glucose",[["mmol/L",1],["mg/dL",1/18.016]],[2,30]],
+["crp","C-reactive protein",[["mg/L",0.1],["mg/dL",1]],[0.001,30]],
+["lym","Lymphocytes",[["%",1]],[2,60]],
+["mcv","Mean corpuscular volume",[["fL",1]],[60,120]],
+["rdw","Red cell distribution width",[["%",1]],[10,25]],
+["alp","Alkaline phosphatase",[["U/L",1]],[20,500]],
+["wbc","White blood cells",[["10³/µL",1]],[1,50]]];
+var $=function(i){return document.getElementById(i)};
+var CONV=false;
+F.forEach(function(f){
+  var d=document.createElement("div");
+  d.innerHTML='<label for="'+f[0]+'">'+f[1]+'</label><div class="row"><input id="'+f[0]+'" type="number" inputmode="decimal" step="any"><select id="u_'+f[0]+'" aria-label="'+f[1]+' unit"></select></div>';
+  $("labs").appendChild(d);
+  var s=d.querySelector("select");
+  f[2].forEach(function(u,i){var o=document.createElement("option");o.value=i;o.textContent=u[0];s.appendChild(o)});
+  s.onchange=refreshResult;
+});
+function setUnits(conv){
+  F.forEach(function(f){var s=$("u_"+f[0]);s.value=(conv&&f[2].length>1)?1:0});
+  CONV=!!conv;$("tog").textContent=conv?"Switch to SI units":"Switch to conventional units";
+}
+function fmt(x,f,idx){return +(x/f[2][idx][1]).toFixed(3)}
+$("tog").onclick=function(){
+  // convert displayed numbers to the new units so values stay the same
+  var conv=!CONV;
+  var cur={};F.forEach(function(f){var v=parseFloat($(f[0]).value);cur[f[0]]=isNaN(v)?null:v*f[2][+$("u_"+f[0]).value][1]});
+  setUnits(conv);
+  F.forEach(function(f){if(cur[f[0]]!=null)$(f[0]).value=fmt(cur[f[0]],f,+$("u_"+f[0]).value)});
+  refreshResult();
+};
+Array.prototype.forEach.call(document.querySelectorAll("input"),function(i){i.oninput=refreshResult;i.onchange=refreshResult});
+function render(){
+  var age=parseFloat($("age").value),miss=[],bad=[],v={age:age},warn=[];
+  F.forEach(function(f){
+    var el=$(f[0]),x=parseFloat(el.value),idx=+$("u_"+f[0]).value;el.classList.remove("bad");
+    if(isNaN(x)){miss.push(f[1]);return}
+    var b=x*f[2][idx][1];v[f[0]]=b;
+    if(b<f[3][0]||b>f[3][1]){bad.push(f[1]);el.classList.add("bad")}
+  });
+  if(isNaN(age))miss.unshift("Chronological age");
+  var html="";
+  var h=function(c,t){html+='<div class="msg'+(typeof c==='string'?' '+c:c?' w':'')+'">'+t+'</div>'};
+  if(miss.length){
+    $("res").innerHTML='<div class="msg w"><b>Incomplete input.</b> PhenoAge is not calculated. Missing: '+miss.join(", ")+'.</div>';return}
+  if(bad.length){
+    $("res").innerHTML='<div class="msg w"><b>Check these values and units:</b> '+bad.join(", ")+'. They fall outside the plausible range, so PhenoAge is not calculated.</div>';return}
+  var pa=phenoAge(v);
+  if(!isFinite(pa)){$("res").innerHTML='<div class="msg w">The value could not be calculated. Check the inputs.</div>';return}
+  var gap=pa-age,inAge=age>=40&&age<45;
+  html='<div class="ages"><div><div class="lbl">Chronological age</div><div class="big">'+age.toFixed(0)+'</div></div><div><div class="lbl">PhenoAge</div><div class="big" style="color:var(--org)">'+pa.toFixed(1)+'</div></div></div>';
+  html+='<div class="gap">Age gap: <b>'+(gap>=0?"+":"")+gap.toFixed(1)+' years</b></div>';
+  var el=[];
+  if(!inAge)el.push("Age is outside the proposed 40–44 study group.");
+  if(!$("asym").checked)el.push("Symptoms present or not confirmed absent: follow the standard clinical pathway.");
+  if(!$("avg").checked)el.push("Average risk not confirmed: follow the standard clinical pathway.");
+  if(el.length)h(1,'<b>Study eligibility: outside the proposed population</b><ul><li>'+el.join("</li><li>")+'</li></ul>');
+  else h(0,'<b>Study eligibility: within the proposed population</b> (age 40–44, asymptomatic, average risk).');
+  if($("acute").checked)h(1,'<b>Acute illness flagged.</b> Inflammation and blood counts can distort PhenoAge. Record the timing and interpret with caution.');
+  if(el.length)h(0,'<b>Research threshold: not assessed.</b> This case is outside the proposed study population.');
+  else if($("acute").checked)h(0,'<b>Research threshold: not assessed.</b> Acute illness was flagged.');
+  else if(pa>=45)h('attention','<b>! Research threshold met</b> (PhenoAge ≥ 45). Illustrative criterion for research review only.');
+  else h('below','<b>✓ Research threshold not met</b> (PhenoAge below 45). This does not rule out colorectal disease.');
+  h(1,'<b>Research output only.</b> Routine eligibility still depends on chronological age (45).');
+  $("res").innerHTML=html;
+}
+function refreshResult(){if(!$("out").hidden)render()}
+$("calculate").onclick=function(){$("out").hidden=false;render()};
+setUnits(false);
+</script></body></html>
